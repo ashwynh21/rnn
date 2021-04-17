@@ -9,9 +9,11 @@ import pandas as pd
 import numpy as np
 
 from sklearn.preprocessing import MinMaxScaler
+
+from declarations.action import Action
 from declarations.position import Position
 from declarations.result import Result
-
+from declarations.state import State
 
 scalar = MinMaxScaler()
 
@@ -35,7 +37,7 @@ class Environment:
     def __next__(self):
         self.__step = self.__step + 1
 
-    def step(self) -> Union[List[List[float]], None]:
+    def step(self) -> (int, Union[State, None]):
         """
         We define the function step that will be the environment progression through the given data. So what we expect
         here is that the function will check some iteration value from its own controlled state system so that is can
@@ -43,9 +45,9 @@ class Environment:
         :return:
         """
         try:
-            return self.__ptraining[self.__step]
+            return self.__step, self.__ptraining[self.__step]
         except IndexError:
-            return None
+            return 0, None
 
     def reset(self):
         self.__step = 0
@@ -69,8 +71,8 @@ class Environment:
         # need to also check if order is possible
         # so since to get the environment state the step function is called, then acted on so the call done to act,
         # will be on the previous step since the step is immediately incremented after step is called
-        cost = self.__ptraining[self.__step][11][4]
-        spread = self.__ptraining[self.__step][11][5]
+        cost = self.__ptraining[self.__step].price()
+        spread = self.__ptraining[self.__step].spread()
 
         price = cost + spread
         state = self.__ptraining[self.__step]
@@ -83,7 +85,7 @@ class Environment:
 
         # we then need to return the data that the agent will need to update its own position in the environment.
         return Position(
-            action=0,
+            action=Action([[1, 0, 0]]),
             volume=volume,
             balance=balance - (volume * price / 100),
             price=price,
@@ -91,8 +93,8 @@ class Environment:
         )
 
     def sell(self, volume: float, balance: float) -> Position:
-        cost = self.__ptraining[self.__step][11][4]
-        spread = self.__ptraining[self.__step][11][5]
+        cost = self.__ptraining[self.__step].price()
+        spread = self.__ptraining[self.__step].spread()
 
         price = cost - spread
         state = self.__ptraining[self.__step]
@@ -105,7 +107,7 @@ class Environment:
 
         # we then need to return the data that the agent will need to update its own position in the environment.
         return Position(
-            action=1,
+            action=Action([[0, 1, 0]]),
             volume=volume,
             balance=balance - (volume * price / 100),
             price=price,
@@ -119,7 +121,7 @@ class Environment:
         self.__next__()
 
         return Position(
-            action=2,
+            action=Action([[0, 0, 1]]),
             state=state,
             balance=0,
             price=0,
@@ -140,9 +142,9 @@ class Environment:
         profit = 0
 
         if position.action == 0:
-            profit = self.__ptraining[self.__step][11][4] - position.price
+            profit = self.__ptraining[self.__step].price() - position.price
         elif position.action == 1:
-            profit = position.price - self.__ptraining[self.__step][11][4]
+            profit = position.price - self.__ptraining[self.__step].price()
 
         # in the result of closing the position we need to return the reward, and the state of the environment.
         return Result(profit=profit, state=self.__ptraining[self.__step])
@@ -182,7 +184,7 @@ class Environment:
         return scalar.fit_transform(fit)[1][0]
 
     @staticmethod
-    def parse(data: pd.DataFrame) -> List[List[List[float]]]:
+    def parse(data: pd.DataFrame) -> List[State]:
         # we remove the columns we do not need
         del data['tick_volume']
         del data['real_volume']
@@ -196,4 +198,5 @@ class Environment:
         data = data.to_numpy()
         data = list(Environment.track(data))
 
-        return data
+        # then we convert the list of lists to a list of state objects
+        return list(map(lambda s: State(s), data))

@@ -2,7 +2,6 @@
 We define this account class because we require a defined sort of score board for our agent that will allow it to
 gauge quantitatively its performance.
 """
-from collections import deque
 from typing import Dict
 from declarations.position import Position
 from declarations.result import Result
@@ -16,6 +15,8 @@ class Account(object):
 
     def __init__(self, balance):
         self.balance = balance
+        self.positions = {}
+        self.ledger = {}
 
     """
     Since our definition here is purely score boarding we need functions to update the properties that we have defined.
@@ -23,7 +24,7 @@ class Account(object):
     So the account will also have a rule for the way it handles positions because right now our algorithm for closing
     a position is not yet well defined so we will for now opt with defining a structured closing strategy.
     """
-    def open(self, k: str, v: Position):
+    def record(self, k: str, v: Position):
         """
         A function that will allow to open a position...
         :return:
@@ -31,7 +32,7 @@ class Account(object):
         self.balance = v.balance
         self.positions[k] = v
 
-    def close(self, k, v: Result):
+    def archive(self, k, v: Result):
         """
         A function that will allow us to close one of the positions that we have in the positions property that we
         have defined.
@@ -48,4 +49,22 @@ class Account(object):
     exception that will cause the session or episode to restart.
     """
     def isable(self, price: float, volume: float) -> bool:
-        return self.balance < (volume * price / 100)
+        return self.balance > (volume * price / 100)
+
+    """
+    Now we define a function that will get the closable positions as a dictionary
+    """
+    def closable(self) -> Dict[str, Position]:
+        data = {}
+        for k, v in self.positions.items():
+            # so this is our closing strategy, of course in the future we will optimize and allow the agent to act on
+            # this decision.
+            if v.elapsed >= 4:
+                data[k] = v
+            else:
+                v.elapsed = v.elapsed + 1
+
+        return data
+
+    def reset(self, balance: float):
+        self.balance = balance
