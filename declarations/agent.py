@@ -33,7 +33,7 @@ class Agent(object):
     as close to a real trading account as possible.
     """
 
-    def __init__(self, name: str, batch: int):
+    def __init__(self, name: str, batch: int, evaluate=False):
         """
         Let us first define the hyper parameters for the agent that we will be using so here we need to use the
         bellman loss function to be able to evaluate the loss of our model properly, we also need to define our
@@ -56,10 +56,13 @@ class Agent(object):
         self.gamma = 0.95
         self.actions = 3
 
+        # we define evaluate in case we are evaluating the Agent
+        self.evaluate = evaluate
+
         # our exploration hyper parameters
         self.epsilon = 1.0
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        # since there are few choices to make we will want to have a 5% decay
+        self.epsilon_decay = 0.95
 
         # we will use the adam optimizer since it uses the gradient descent algorithm to optimize the loss function.
         self.optimizer = Adam(lr=self.learning_rate)
@@ -87,19 +90,20 @@ class Agent(object):
         # we also need to define our model.
         model = Sequential()
         # self.model.add(LSTM(28, input_shape=(2, 5, 28)))
-        model.add(Conv2D(14, (3, 3), padding='same', activation='sigmoid', input_shape=(12, 6, 1)))
+        model.add(Conv2D(128, (3, 3), padding='same', activation='sigmoid', input_shape=(12, 6, 1)))
         model.add(MaxPooling2D((2, 2)))
 
-        model.add(Conv2D(28, (3, 3), activation='sigmoid'))
+        model.add(Conv2D(256, (3, 3), activation='sigmoid'))
         model.add(MaxPooling2D((2, 1)))
         # we would like to add an LSTM layer here for it to remember the logical structure for future decisions that are
         # important
         model.add(Flatten())
         model.add(Reshape((1, -1)))
 
-        model.add(LSTM(56))
-        model.add(Dropout(0.5))
+        model.add(LSTM(256))
+        model.add(Dropout(0.25))
 
+        model.add(Dense(units=128, activation='relu'))
         model.add(Dense(units=32, activation='relu'))
         model.add(Dense(units=self.actions))  # hold, buy, sell
 
@@ -115,19 +119,21 @@ class Agent(object):
         self.target.set_weights(self.policy.get_weights())
 
     def load(self):
-        return load_model(f'models/{self.name}')
+        self.policy = load_model(f'models/{self.name}.h5')
+        self.__update__()
+        return self.policy
 
     def save(self):
         self.policy.save(f'models/{self.name}.h5')
 
     def act(self, state: State) -> Action:
         # let us first normalize the state before acting on it.
-        if random() < self.epsilon:
+        if random() < self.epsilon and not self.evaluate:
             p = list(np.zeros(self.actions, dtype=float).flatten())
             p[randrange(self.actions)] = 1
 
             return Action([p])
-        return Action(self.policy.predict(state.normalize()))
+        return Action(self.policy.predict(state.normalize()), True)
 
     """
     We now need to define a function that will learn from the saved experiences in memory.
@@ -150,12 +156,13 @@ class Agent(object):
 
         # as the training goes on we want the agent to
         # make less random and more optimal decisions
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+        self.epsilon *= self.epsilon_decay
 
         # check to see if its time to update the target model weights.
         if self.sessions % self.update == 0:
             self.__update__()
+            # we should also use the opportunity to save the policy model.
+            self.save()
 
         self.sessions = self.sessions + 1
 

@@ -9,7 +9,9 @@ import numpy as np
 
 class Action(object):
     probabilities: List[List[float]]
+    random: bool
 
-    def __init__(self, action: List[List[float]]):
+    def __init__(self, action: List[List[float]], random=True):
         self.probabilities = action
         self.action = np.argmax(action)
+        self.random = random

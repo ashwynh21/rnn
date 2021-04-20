@@ -42,3 +42,5 @@ behind the definition of the classes.
     9. Gradient Descent updates weights in the policy network to minimize loss.
         *   After ```x``` time steps, weights in the target network are updated to the weights in the
         policy network.
+
+######Goals & Rewards

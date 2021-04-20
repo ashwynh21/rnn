@@ -19,18 +19,19 @@ scalar = MinMaxScaler()
 
 
 class Environment:
-    def __init__(self, training: str, testing: str):
+    """
+    To accomodate the cases of
+    """
+    def __init__(self, training: str):
         # we define the initial time step state to zero
         self.__step = 0
         """
         So here we will define the input data set, from the a file path to the CSV learning and testing data.
         """
-        self.__training = pd.read_csv(training)
-        self.__testing = pd.read_csv(testing)
+        self.__data = pd.read_csv(training)
         # we then need to keep a nice digested version of the information in a way that will allow to cross reference
         # the information between both data sets.
-        self.__ptraining = Environment.parse(self.__training)
-        self.__ptesting = Environment.parse(self.__testing)
+        self.__pdata = Environment.parse(self.__data)
         # okay that's all done, we now need the environment to be able to handle the actions that an agent would take,
         # since it is the environment that defines what actions are taken on it. we define the actions here.
 
@@ -44,10 +45,7 @@ class Environment:
         return the necessary data that is relevant to the given time step that it is in.
         :return:
         """
-        try:
-            return self.__step, self.__ptraining[self.__step]
-        except IndexError:
-            return 0, None
+        return self.__step, self.__pdata[self.__step]
 
     def reset(self):
         self.__step = 0
@@ -71,11 +69,11 @@ class Environment:
         # need to also check if order is possible
         # so since to get the environment state the step function is called, then acted on so the call done to act,
         # will be on the previous step since the step is immediately incremented after step is called
-        cost = self.__ptraining[self.__step].price()
-        spread = self.__ptraining[self.__step].spread()
+        cost = self.__pdata[self.__step].price()
+        spread = self.__pdata[self.__step].spread()
 
         price = cost + spread
-        state = self.__ptraining[self.__step]
+        state = self.__pdata[self.__step]
 
         if balance < (volume * price / 100):
             raise Exception('Insufficient balance to buy')
@@ -93,11 +91,11 @@ class Environment:
         )
 
     def sell(self, volume: float, balance: float) -> Position:
-        cost = self.__ptraining[self.__step].price()
-        spread = self.__ptraining[self.__step].spread()
+        cost = self.__pdata[self.__step].price()
+        spread = self.__pdata[self.__step].spread()
 
         price = cost - spread
-        state = self.__ptraining[self.__step]
+        state = self.__pdata[self.__step]
 
         if balance < (volume * price / 100):
             raise Exception('Insufficient balance to buy')
@@ -115,7 +113,7 @@ class Environment:
         )
 
     def hold(self) -> Position:
-        state = self.__ptraining[self.__step]
+        state = self.__pdata[self.__step]
 
         # then we update the time step...
         self.__next__()
@@ -142,12 +140,12 @@ class Environment:
         profit = 0
 
         if position.action == 0:
-            profit = self.__ptraining[self.__step].price() - position.price
+            profit = self.__pdata[self.__step].price() - position.price
         elif position.action == 1:
-            profit = position.price - self.__ptraining[self.__step].price()
+            profit = position.price - self.__pdata[self.__step].price()
 
         # in the result of closing the position we need to return the reward, and the state of the environment.
-        return Result(profit=profit, state=self.__ptraining[self.__step])
+        return Result(profit=profit, state=self.__pdata[self.__step])
 
     """
     Okay the environment should be defined properly now, that said we are now able to step through the environment and
@@ -200,3 +198,10 @@ class Environment:
 
         # then we convert the list of lists to a list of state objects
         return list(map(lambda s: State(s), data))
+
+    """
+    we need to define a function that checks if the episode or state data is completed its iteration so that we are
+    able to stop querying for data that isnt there yet.
+    """
+    def done(self) -> bool:
+        return self.__step == len(self.__pdata) - 1
