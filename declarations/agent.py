@@ -98,10 +98,11 @@ class Agent(object):
         # we would like to add an LSTM layer here for it to remember the logical structure for future decisions that are
         # important
         model.add(Flatten())
-        model.add(Reshape((1, -1)))
+        # model.add(Reshape((1, -1)))
 
-        model.add(LSTM(256))
-        model.add(Dropout(0.25))
+        # watch out on how many nodes are provided here because the thing starts repeating actions
+        # model.add(LSTM(64))
+        # model.add(Dropout(0.25))
 
         model.add(Dense(units=128, activation='relu'))
         model.add(Dense(units=32, activation='relu'))
@@ -133,7 +134,7 @@ class Agent(object):
             p[randrange(self.actions)] = 1
 
             return Action([p])
-        return Action(self.policy.predict(state.normalize()), True)
+        return Action(self.policy.predict(state.normalize()), False)
 
     """
     We now need to define a function that will learn from the saved experiences in memory.

@@ -16,4 +16,4 @@ class Result(NamedTuple):
         if the result was loss then the agent loses 1 point.
         :return:
         """
-        return self.profit
+        return 1 if self.profit > 0 else -0.2

@@ -105,7 +105,20 @@ class Metric(object):
     We define a function that will count the number of random actions against the actual approximated actions.
     """
     def approximations(self) -> dict:
+        def fill(action: Action, r: bool) -> bool:
+            return action.random == r
+
         return {
-            'random': len(list(filter(lambda a: a.random, self.actions))),
-            'predicted': len(list(filter(lambda a: not a.random, self.actions)))
+            'random': len(list(filter(lambda a: fill(a, True), self.actions))),
+            'predicted': len(list(filter(lambda a: fill(a, False), self.actions)))
+        }
+
+    """
+    We now need a function to observe and summarize the actions that are taken by the agent so here we go.
+    """
+    def actionsummary(self):
+        return {
+            'buy': len(list(filter(lambda a: a.action == 0, self.actions))),
+            'sell': len(list(filter(lambda a: a.action == 1, self.actions))),
+            'hold': len(list(filter(lambda a: a.action == 2, self.actions))),
         }

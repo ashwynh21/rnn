@@ -84,9 +84,11 @@ def train(environment: Environment, agent: Agent, account: Account, metric: Metr
             # update our metrics
             ma = metric.survival(index)
             ap = metric.approximations()
+            ax = metric.actionsummary()
 
             print(f'Account Depleted - Survided {index} Hours, MA - {ma[-1] if len(ma) > 0 else 0}, Random Actions - ' +
                   f'{ap["random"]}, Approximated - {ap["predicted"]}')
+            print(f'Action Summary - Buy: {ax["buy"]}, Sell: {ax["sell"]}, Hold: {ax["hold"]}')
 
             metric.restart()
             metric.reset()

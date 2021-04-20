@@ -56,10 +56,17 @@ class Account(object):
     """
     def closable(self) -> Dict[str, Position]:
         data = {}
+        """
+        We need to devise a better way to close positions because the current strategy is too difficult for the agent
+        to work with. We require a more dynamic method to which we can close positions.
+        
+        1. Let us consider the data that we would like to use in considering whether a position is a valid close.
+            i. 
+        """
         for k, v in self.positions.items():
             # so this is our closing strategy, of course in the future we will optimize and allow the agent to act on
             # this decision.
-            if v.elapsed >= 4:
+            if v.elapsed >= 2:
                 data[k] = v
             else:
                 v.elapsed = v.elapsed + 1
