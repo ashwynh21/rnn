@@ -122,3 +122,7 @@ class Metric(object):
             'sell': len(list(filter(lambda a: a.action == 1, self.actions))),
             'hold': len(list(filter(lambda a: a.action == 2, self.actions))),
         }
+
+    """
+    We are going to need a function that will keep track of the maximum profit an account has made before being lost.
+    """

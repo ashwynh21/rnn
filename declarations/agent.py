@@ -1,6 +1,6 @@
 from random import random, randrange
 
-from keras.layers import Dense, Conv2D, MaxPooling2D, LSTM, Flatten, Dropout, Reshape
+from keras.layers import Dense, Conv2D, MaxPooling2D
 from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.metrics import Accuracy
@@ -62,7 +62,7 @@ class Agent(object):
         # our exploration hyper parameters
         self.epsilon = 1.0
         # since there are few choices to make we will want to have a 5% decay
-        self.epsilon_decay = 0.95
+        self.epsilon_decay = 0.98
 
         # we will use the adam optimizer since it uses the gradient descent algorithm to optimize the loss function.
         self.optimizer = Adam(lr=self.learning_rate)
@@ -89,23 +89,25 @@ class Agent(object):
         """
         # we also need to define our model.
         model = Sequential()
-        # self.model.add(LSTM(28, input_shape=(2, 5, 28)))
-        model.add(Conv2D(128, (3, 3), padding='same', activation='sigmoid', input_shape=(12, 6, 1)))
+
+        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid', input_shape=(24, 6, 1)))
+        model.add(MaxPooling2D((2, 1)))
+
+        model.add(Conv2D(128, (3, 3), padding='same', activation='sigmoid'))
+        model.add(MaxPooling2D((2, 1)))
+
+        # increasing complexity to find and better solution to the decision problem.
+        model.add(Conv2D(128, (3, 3), padding='same', activation='sigmoid'))
         model.add(MaxPooling2D((2, 2)))
 
-        model.add(Conv2D(256, (3, 3), activation='sigmoid'))
-        model.add(MaxPooling2D((2, 1)))
+        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid'))
+        model.add(MaxPooling2D((3, 3)))
         # we would like to add an LSTM layer here for it to remember the logical structure for future decisions that are
         # important
-        model.add(Flatten())
-        # model.add(Reshape((1, -1)))
 
-        # watch out on how many nodes are provided here because the thing starts repeating actions
-        # model.add(LSTM(64))
-        # model.add(Dropout(0.25))
-
-        model.add(Dense(units=128, activation='relu'))
         model.add(Dense(units=32, activation='relu'))
+        model.add(Dense(units=16, activation='relu'))
+
         model.add(Dense(units=self.actions))  # hold, buy, sell
 
         model.compile(loss=Huber(), optimizer=self.optimizer, metrics=[Accuracy()])
@@ -133,7 +135,7 @@ class Agent(object):
             p = list(np.zeros(self.actions, dtype=float).flatten())
             p[randrange(self.actions)] = 1
 
-            return Action([p])
+            return Action([[[p]]])
         return Action(self.policy.predict(state.normalize()), False)
 
     """
@@ -150,8 +152,7 @@ class Agent(object):
             bullsey = self.target.predict(nexter.normalize())
 
             # update the target for current action based on discounted reward
-            target[0][action.action] = reward + self.gamma * np.amax(bullsey)
-
+            target[0][0][0][action.action] = reward + self.gamma * np.amax(bullsey)
             x.append(state.normalize()[0])
             y.append(target[0])
 

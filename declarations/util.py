@@ -48,7 +48,7 @@ def train(environment: Environment, agent: Agent, account: Account, metric: Metr
                 environment.__next__()
 
                 # for holding we will give the agent a reward
-                memory = Experience(state=state, action=action, reward=-0.1, next=environment.step()[1])
+                memory = Experience(state=state, action=action, reward=-0.2, next=environment.step()[1])
                 # then we add this experience to the agents memory.
                 agent.memory.remember(memory)
 
@@ -56,7 +56,7 @@ def train(environment: Environment, agent: Agent, account: Account, metric: Metr
             Once the states market position has been handled then we need to now check our closing strategy for each
             of our open positions.
             """
-            for k, p in account.closable().items():
+            for k, p in account.closable(state, action).items():
                 r = environment.close(p)
                 # now we update the account by removing the positions and adding the result to the ledger
                 account.archive(k, r)
@@ -86,15 +86,15 @@ def train(environment: Environment, agent: Agent, account: Account, metric: Metr
             ap = metric.approximations()
             ax = metric.actionsummary()
 
-            print(f'Account Depleted - Survided {index} Hours, MA - {ma[-1] if len(ma) > 0 else 0}, Random Actions - ' +
-                  f'{ap["random"]}, Approximated - {ap["predicted"]}')
-            print(f'Action Summary - Buy: {ax["buy"]}, Sell: {ax["sell"]}, Hold: {ax["hold"]}')
+            # print(f'Account Depleted - Survided {index} Hours, MA - {ma[-1] if len(ma) > 0 else 0}, Random Actions - ' +
+            #       f'{ap["random"]}, Approximated - {ap["predicted"]}')
+            # print(f'Action Summary - Buy: {ax["buy"]}, Sell: {ax["sell"]}, Hold: {ax["hold"]}')
 
             metric.restart()
-            metric.reset()
+            # metric.reset()
 
             account.reset(100)
-            environment.reset()
+            # environment.reset()
 
             metric.survival(index)
             # we wont reset this time...

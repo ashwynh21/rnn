@@ -3,12 +3,16 @@ We define this account class because we require a defined sort of score board fo
 gauge quantitatively its performance.
 """
 from typing import Dict
+
+from declarations.action import Action
 from declarations.position import Position
 from declarations.result import Result
+from declarations.state import State
 
 
 class Account(object):
     balance: float
+    risk: float
 
     ledger: Dict[str, Result]
     positions: Dict[str, Position]
@@ -17,6 +21,8 @@ class Account(object):
         self.balance = balance
         self.positions = {}
         self.ledger = {}
+
+        self.risk = 0.02
 
     """
     Since our definition here is purely score boarding we need functions to update the properties that we have defined.
@@ -53,25 +59,53 @@ class Account(object):
 
     """
     Now we define a function that will get the closable positions as a dictionary
+    
+    We are going to redesign our closing function to better incorporate other factors of the position, the price of the
+    market and other factors that would be relevant to the position.
     """
-    def closable(self) -> Dict[str, Position]:
+    def closable(self, state: State, action: Action) -> Dict[str, Position]:
+        """
+        We should only need the state of the environment since all the values to evaluate the validity of the
+        position are based on computations between the two properties.
+        :param action:
+        :param state:
+        :return:
+        """
         data = {}
-        """
-        We need to devise a better way to close positions because the current strategy is too difficult for the agent
-        to work with. We require a more dynamic method to which we can close positions.
-        
-        1. Let us consider the data that we would like to use in considering whether a position is a valid close.
-            i. 
-        """
+
         for k, v in self.positions.items():
-            # so this is our closing strategy, of course in the future we will optimize and allow the agent to act on
+            # first let us compute the profit of each position.
+            profit = 0
+            # we compute the stoploss price of the position.
+            stop = v.price + self.stoploss() * (1 if action == 1 else -1)
+            take = v.price + (5 * self.stoploss()) * (-1 if action == 1 else 1)
+
+            if v.action.action == 0:
+                profit = state.price() - v.price
+            elif v.action.action == 1:
+                profit = v.price - state.price()
+
+            # so once we have the profit we need to get the next action from the agent, so we add it to the args list
+            # so if the position is in the same direction as the action we hold otherwise we close.
             # this decision.
-            if v.elapsed >= 2:
+            # we add the condition that if the position bias is 1, then we close the position.
+            close = (action.action != v.action and action.action != 2) and\
+                    (
+                        ((state.price() > stop) if action == 1 else (state.price() < stop)) or
+                        ((state.price() > take) if action == 0 else (state.price() < take))
+                    )
+
+            if close:
                 data[k] = v
             else:
                 v.elapsed = v.elapsed + 1
-
         return data
 
     def reset(self, balance: float):
         self.balance = balance
+
+    """
+    We are going to need a function to calculate the risk that the account can manage before opening a position.
+    """
+    def stoploss(self) -> float:
+        return self.balance * self.risk

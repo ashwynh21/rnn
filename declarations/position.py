@@ -8,6 +8,8 @@ class Position(object):
     balance: float
     price: float
     state: State
+    # we add a property that will allow us to keep track of the bias toward the position
+    bias: float
 
     elapsed: int
 
@@ -19,3 +21,4 @@ class Position(object):
         self.volume = volume
 
         self.elapsed = 0
+        self.bias = 1

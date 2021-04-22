@@ -159,7 +159,7 @@ class Environment:
     """
     @staticmethod
     def track(data):
-        t = 12
+        t = 24
         for i in range(len(data) - t):
             yield data[i: i + t]
 
