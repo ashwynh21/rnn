@@ -146,10 +146,10 @@ class Agent(object):
         for state, action, reward, nexter in buffer:
             # estimate q-values based on current state
             target = self.policy.predict(state.normalize())
-            bullsey = self.target.predict(nexter.normalize())
+            bullseye = self.target.predict(nexter.normalize())
 
             # update the target for current action based on discounted reward
-            target[0][0][0][action.action] = reward + self.gamma * np.amax(bullsey)
+            target[0][0][0][action.action] = reward + self.gamma * np.amax(bullseye)
             x.append(state.normalize()[0])
             y.append(target[0])
 
