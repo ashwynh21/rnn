@@ -90,10 +90,7 @@ class Agent(object):
         # we also need to define our model.
         model = Sequential()
 
-        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid', input_shape=(24, 6, 1)))
-        model.add(MaxPooling2D((2, 1)))
-
-        model.add(Conv2D(128, (3, 3), padding='same', activation='sigmoid'))
+        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid', input_shape=(12, 6, 1)))
         model.add(MaxPooling2D((2, 1)))
 
         # increasing complexity to find and better solution to the decision problem.
@@ -135,7 +132,7 @@ class Agent(object):
             p = list(np.zeros(self.actions, dtype=float).flatten())
             p[randrange(self.actions)] = 1
 
-            return Action([[[p]]])
+            return Action([p])
         return Action(self.policy.predict(state.normalize()), False)
 
     """

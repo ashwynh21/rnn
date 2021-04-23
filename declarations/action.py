@@ -8,10 +8,10 @@ import numpy as np
 
 
 class Action(object):
-    probabilities: List[List[List[List[float]]]]
+    probabilities: List[List[float]]
     random: bool
 
-    def __init__(self, action: List[List[List[List[float]]]], random=True):
+    def __init__(self, action: List[List[float]], random=True):
         self.probabilities = action
         self.action = np.argmax(action)
         self.random = random

@@ -85,15 +85,14 @@ class Account(object):
             elif v.action.action == 1:
                 profit = v.price - state.price()
 
+            if action.action != v.action.action and action.action != 2:
+                v.bias = v.bias - 0.25
+
             # so once we have the profit we need to get the next action from the agent, so we add it to the args list
             # so if the position is in the same direction as the action we hold otherwise we close.
             # this decision.
-            # we add the condition that if the position bias is 1, then we close the position.
-            close = (action.action != v.action and action.action != 2) and\
-                    (
-                        ((state.price() > stop) if action == 1 else (state.price() < stop)) or
-                        ((state.price() > take) if action == 0 else (state.price() < take))
-                    )
+            # we add the condition that if the position bias is less than 0, then we close the position.
+            close = v.bias <= 0
 
             if close:
                 data[k] = v
