@@ -18,10 +18,10 @@ class State(object):
         return self.__normalize__()
 
     def price(self) -> float:
-        return self.data[11][4]
+        return self.data[119][4]
 
     def spread(self) -> float:
-        return self.data[11][5]
+        return self.data[119][5]
 
     def __normalize__(self) -> np.array:
         # first we need to remove the first element of each element in the List
@@ -38,4 +38,4 @@ class State(object):
         for i, candle in enumerate(scaled):
             candle.append(time[i])
 
-        return np.array([np.array(scaled).reshape(12, 6, 1)])
+        return np.array([np.array(scaled).reshape(120, 6, 1)])

@@ -30,6 +30,7 @@ class Account(object):
     So the account will also have a rule for the way it handles positions because right now our algorithm for closing
     a position is not yet well defined so we will for now opt with defining a structured closing strategy.
     """
+
     def record(self, k: str, v: Position):
         """
         A function that will allow to open a position...
@@ -54,6 +55,7 @@ class Account(object):
     said position before submitting the request to the environment. If the balance is not enough then we raise an
     exception that will cause the session or episode to restart.
     """
+
     def isable(self, price: float, volume: float) -> bool:
         return self.balance > (volume * price / 100)
 
@@ -63,6 +65,7 @@ class Account(object):
     We are going to redesign our closing function to better incorporate other factors of the position, the price of the
     market and other factors that would be relevant to the position.
     """
+
     def closable(self, state: State, action: Action) -> Dict[str, Position]:
         """
         We should only need the state of the environment since all the values to evaluate the validity of the
@@ -85,14 +88,15 @@ class Account(object):
             elif v.action.action == 1:
                 profit = v.price - state.price()
 
-            if action.action != v.action.action and action.action != 2:
-                v.bias = v.bias - 0.25
+            if action.action != 2:
+                v.bias.pop(0)
+                v.bias.append(action.action)
 
             # so once we have the profit we need to get the next action from the agent, so we add it to the args list
             # so if the position is in the same direction as the action we hold otherwise we close.
             # this decision.
             # we add the condition that if the position bias is less than 0, then we close the position.
-            close = v.bias <= 0
+            close = len(list(filter(lambda b: b != v.action.action, v.bias))) >= 2 and v.elapsed > 120
 
             if close:
                 data[k] = v
@@ -106,5 +110,6 @@ class Account(object):
     """
     We are going to need a function to calculate the risk that the account can manage before opening a position.
     """
+
     def stoploss(self) -> float:
         return self.balance * self.risk

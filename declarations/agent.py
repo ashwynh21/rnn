@@ -49,7 +49,7 @@ class Agent(object):
         self.sessions = 0
 
         # we init the account
-        self.learning_rate = 0.001
+        self.learning_rate = 0.0005
         self.name = name
 
         # affinity for long term reward
@@ -62,7 +62,7 @@ class Agent(object):
         # our exploration hyper parameters
         self.epsilon = 1.0
         # since there are few choices to make we will want to have a 5% decay
-        self.epsilon_decay = 0.98
+        self.epsilon_decay = 0.99
 
         # we will use the adam optimizer since it uses the gradient descent algorithm to optimize the loss function.
         self.optimizer = Adam(lr=self.learning_rate)
@@ -90,14 +90,20 @@ class Agent(object):
         # we also need to define our model.
         model = Sequential()
 
-        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid', input_shape=(12, 6, 1)))
+        model.add(Conv2D(32, (3, 3), padding='same', activation='sigmoid', input_shape=(120, 6, 1)))
         model.add(MaxPooling2D((2, 1)))
 
+        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid'))
+        model.add(MaxPooling2D((2, 1)))
+
+        model.add(Conv2D(96, (3, 3), padding='same', activation='sigmoid'))
+        model.add(MaxPooling2D((5, 1)))
+
         # increasing complexity to find and better solution to the decision problem.
-        model.add(Conv2D(128, (3, 3), padding='same', activation='sigmoid'))
+        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid'))
         model.add(MaxPooling2D((2, 2)))
 
-        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid'))
+        model.add(Conv2D(32, (3, 3), padding='same', activation='sigmoid'))
         model.add(MaxPooling2D((3, 3)))
         # we would like to add an LSTM layer here for it to remember the logical structure for future decisions that are
         # important
@@ -132,7 +138,7 @@ class Agent(object):
             p = list(np.zeros(self.actions, dtype=float).flatten())
             p[randrange(self.actions)] = 1
 
-            return Action([p])
+            return Action([[[p]]])
         return Action(self.policy.predict(state.normalize()), False)
 
     """
@@ -145,13 +151,14 @@ class Agent(object):
         x, y = [], []
         for state, action, reward, nexter in buffer:
             # estimate q-values based on current state
-            target = self.policy.predict(state.normalize())
-            bullseye = self.target.predict(nexter.normalize())
+
+            target = Action(self.policy.predict(state.normalize()))
+            bullseye = Action(self.target.predict(nexter.normalize()))
 
             # update the target for current action based on discounted reward
-            target[0][0][0][action.action] = reward + self.gamma * np.amax(bullseye)
+            target.probabilities[0][0][0][action.action] = reward + self.gamma * np.amax(bullseye.probabilities)
             x.append(state.normalize()[0])
-            y.append(target[0])
+            y.append(target.normalize()[0])
 
         # as the training goes on we want the agent to
         # make less random and more optimal decisions

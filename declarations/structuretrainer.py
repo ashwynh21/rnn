@@ -1,6 +1,6 @@
 """
 We define the following class to isolate the trainer code of different agents that we will be building. We are moving
-into building cordinated agents.
+into building coordinated agents.
 """
 
 from declarations import Environment, Agent, Account, Metric, Experience
@@ -23,7 +23,32 @@ class StructureTrainer:
             print(f'+----------------------------------------------------------+')
             print(f'| Training Session Summary on Agent                        |')
             print(f'+----------------------------------------------------------+')
-            print(f'| Restarts        | {str(metric.restarts).ljust(39)}|')
+            print(f'| Restarts        | {str(metric.restarts).ljust(8)} | Total Nett Gain | {str(int(sum(metric.profit))).ljust(8)} |')
+            print(f'+----------------------------------------------------------+')
+            print(f'| Actions Summary | {str(len(metric.actions)).ljust(39)}|')
+            print(f'+----------------------------------------------------------+')
+            print(
+                f'| Buy |    {str(ax["buy"]).ljust(4)}    | Sell |    {str(ax["sell"]).ljust(4)}    | Hold |    {str(ax["hold"]).ljust(4)}    |')
+            print(f'+----------------------------------------------------------+\n')
+
+            environment.reset()
+            metric.reset()
+
+    def evaluate(self):
+        account = Account(100)
+        metric = Metric()
+
+        environment = Environment('assets/NAS100_2021.csv')
+        agent = Agent('nasdaq', 128, evaluate=True)
+
+        for i in range(4):
+            self.___evaluate__(environment, agent, account, metric)
+            ax = metric.actionsummary()
+
+            print(f'+----------------------------------------------------------+')
+            print(f'| Training Session Summary on Agent                        |')
+            print(f'+----------------------------------------------------------+')
+            print(f'| Restarts        | {str(metric.restarts).ljust(8)} | Total Nett Gain | {str(int(sum(metric.profit))).ljust(8)} |')
             print(f'+----------------------------------------------------------+')
             print(f'| Actions Summary | {str(len(metric.actions)).ljust(39)}|')
             print(f'+----------------------------------------------------------+')
@@ -36,15 +61,6 @@ class StructureTrainer:
 
     @staticmethod
     def __train__(environment: Environment, agent: Agent, account: Account, metric: Metric):
-        """
-        Now we need to devise a way that the agent will trade the account, by getting the state from the environment and
-        acting on it using the account. Having made a choice on the action to take then we need to use the result action
-        with the account.
-
-        So we then need to check if the account has enough balance to execute our position order, then if able we then
-        perform an action on the environment. The environment will return a position which me must then add to the
-        account data.
-        """
         while not environment.done():
             # we first get the state of the environment
             index, state = environment.step()
@@ -69,7 +85,12 @@ class StructureTrainer:
                     environment.__next__()
 
                     # for holding we will give the agent a reward
-                    memory = Experience(state=state, action=action, reward=-0.2, next=environment.step()[1])
+                    memory = Experience(
+                        state=state,
+                        action=action,
+                        reward=0.001,
+                        next=environment.step()[1]
+                    )
                     # then we add this experience to the agents memory.
                     agent.memory.remember(memory)
 
@@ -83,7 +104,8 @@ class StructureTrainer:
                     account.archive(k, r)
 
                     # now we need to remember the position in the memory so we construct an experience.
-                    experience = Experience(p.state, p.action, r.reward(), environment.step()[1])
+                    experience = Experience(p.state, p.action, r.reward(), p.nexter)
+                    metric.addprofit(r.profit)
                     agent.memory.remember(experience)
 
                 # so if the memory is full we should start training the model
@@ -108,8 +130,7 @@ class StructureTrainer:
                 metric.survival(index)
                 # we wont reset this time...
 
-        metric.addprofit(account.balance - 100)
-        # print(f'Session Complete - {account.balance}')
+        metric.restarts -= 1
 
     """
     the function below is designed to evaluate the survival ability learned from the training session using a different
@@ -125,7 +146,6 @@ class StructureTrainer:
             Then now we need to act on this state so we parse it to our agent to make a decision on what to do...
             """
             action = agent.act(state)
-            print(f'looping - {action.action}')
             """
             Once we get an action we now need to check the account instance to see if there is enough money to do
             anything.
@@ -152,6 +172,8 @@ class StructureTrainer:
                     r = environment.close(p)
                     # now we update the account by removing the positions and adding the result to the ledger
                     account.archive(k, r)
+                    metric.addprofit(r.profit)
+                    print('profit - ', r.profit)
             else:
                 # update our metrics
                 metric.restart()

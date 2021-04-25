@@ -99,6 +99,7 @@ class Metric(object):
 
     def reset(self):
         self.restarts = 1
+        self.profit.clear()
         self.actions.clear()
 
     """

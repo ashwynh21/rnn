@@ -1,3 +1,7 @@
+from declarations.structuretrainer import StructureTrainer
 
 if __name__ == '__main__':
-    print('hello world')
+    trainer = StructureTrainer()
+
+    trainer.train()
+    trainer.evaluate()

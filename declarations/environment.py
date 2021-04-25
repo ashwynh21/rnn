@@ -15,12 +15,14 @@ from declarations.position import Position
 from declarations.result import Result
 from declarations.state import State
 
+from scipy.interpolate import interp1d
+
 scalar = MinMaxScaler()
 
 
 class Environment:
     """
-    To accomodate the cases of
+    To accommodate the cases of
     """
     def __init__(self, training: str):
         # we define the initial time step state to zero
@@ -83,11 +85,12 @@ class Environment:
 
         # we then need to return the data that the agent will need to update its own position in the environment.
         return Position(
-            action=Action([[1, 0, 0]]),
+            action=Action([[[[1, 0, 0]]]]),
             volume=volume,
             balance=balance - (volume * price / 100),
             price=price,
             state=state,
+            nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1]
         )
 
     def sell(self, volume: float, balance: float) -> Position:
@@ -105,11 +108,12 @@ class Environment:
 
         # we then need to return the data that the agent will need to update its own position in the environment.
         return Position(
-            action=Action([[0, 1, 0]]),
+            action=Action([[[[0, 1, 0]]]]),
             volume=volume,
             balance=balance - (volume * price / 100),
             price=price,
             state=state,
+            nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1]
         )
 
     def hold(self) -> Position:
@@ -119,11 +123,12 @@ class Environment:
         self.__next__()
 
         return Position(
-            action=Action([[0, 0, 1]]),
+            action=Action([[[[0, 0, 1]]]]),
             state=state,
             balance=0,
             price=0,
-            volume=0
+            volume=0,
+            nexter=self.__pdata[self.__step]
         )
 
     def close(self, position: Position) -> Result:
@@ -139,19 +144,13 @@ class Environment:
         """
         profit = 0
 
-        if position.action == 0:
+        if position.action.action == 0:
             profit = self.__pdata[self.__step].price() - position.price
-        elif position.action == 1:
+        elif position.action.action == 1:
             profit = position.price - self.__pdata[self.__step].price()
 
         # in the result of closing the position we need to return the reward, and the state of the environment.
         return Result(profit=profit, state=self.__pdata[self.__step])
-
-    """
-    Okay the environment should be defined properly now, that said we are now able to step through the environment and
-    get the state of the system and externally act on it, the act is a two step process in which we have secured the
-    second step through strategic closes that.
-    """
 
     """
     Here we define a set of helper functions for the environment that will help convert the external data into something
@@ -159,7 +158,7 @@ class Environment:
     """
     @staticmethod
     def track(data):
-        t = 12
+        t = 120
         for i in range(len(data) - t):
             yield data[i: i + t]
 
