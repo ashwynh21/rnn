@@ -2,8 +2,11 @@
 We define the following class to isolate the trainer code of different agents that we will be building. We are moving
 into building coordinated agents.
 """
+from time import sleep
 
 from declarations import Environment, Agent, Account, Metric, Experience
+
+import matplotlib.pyplot as pt
 
 
 class StructureTrainer:
@@ -15,7 +18,7 @@ class StructureTrainer:
         environment = Environment('assets/NAS100.csv')
         agent = Agent('nasdaq', 128)
         # run our training function
-        while metric.restarts != 0:
+        for i in range(4):
             self.__train__(environment, agent, account, metric)
 
             ax = metric.actionsummary()
@@ -30,6 +33,10 @@ class StructureTrainer:
             print(
                 f'| Buy |    {str(ax["buy"]).ljust(4)}    | Sell |    {str(ax["sell"]).ljust(4)}    | Hold |    {str(ax["hold"]).ljust(4)}    |')
             print(f'+----------------------------------------------------------+\n')
+
+            # then we plot the loss that we are getting from the agent training.
+            pt.plot(range(len(metric.loss)), metric.loss)
+            pt.show()
 
             environment.reset()
             metric.reset()
@@ -55,6 +62,10 @@ class StructureTrainer:
             print(
                 f'| Buy |    {str(ax["buy"]).ljust(4)}    | Sell |    {str(ax["sell"]).ljust(4)}    | Hold |    {str(ax["hold"]).ljust(4)}    |')
             print(f'+----------------------------------------------------------+\n')
+
+            # then we plot the loss that we are getting from the agent training.
+            pt.plot(range(len(metric.loss)), metric.loss)
+            pt.show()
 
             environment.reset()
             metric.reset()
@@ -88,7 +99,7 @@ class StructureTrainer:
                     memory = Experience(
                         state=state,
                         action=action,
-                        reward=0.001,
+                        reward=0.0025,
                         next=environment.step()[1]
                     )
                     # then we add this experience to the agents memory.
@@ -152,9 +163,11 @@ class StructureTrainer:
             """
             # then we need to check if the account is able to open positions otherwise the account is blown
             if account.isable(state.price(), 0.01):
+                sleep(1)
                 """
                 Once confirmed then we place our oder onto the environment.
                 """
+                print('action - ', action.action)
                 if action.action == 0:
                     # then we get the position from the environment and add it to the account
                     account.record(str(index), environment.buy(0.01, account.balance))
@@ -170,6 +183,7 @@ class StructureTrainer:
                 """
                 for k, p in account.closable(state, action).items():
                     r = environment.close(p)
+                    print('close - ', r.profit)
                     # now we update the account by removing the positions and adding the result to the ledger
                     account.archive(k, r)
                     metric.addprofit(r.profit)
