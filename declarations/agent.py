@@ -90,20 +90,20 @@ class Agent(object):
         # we also need to define our model.
         model = Sequential()
 
-        model.add(Conv2D(32, (3, 3), padding='same', activation='sigmoid', input_shape=(120, 6, 1)))
+        model.add(Conv2D(128, (3, 3), padding='same', activation='sigmoid', input_shape=(120, 6, 1)))
         model.add(MaxPooling2D((2, 1)))
 
-        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid'))
+        model.add(Conv2D(144, (3, 3), padding='same', activation='sigmoid'))
         model.add(MaxPooling2D((2, 1)))
 
-        model.add(Conv2D(96, (3, 3), padding='same', activation='sigmoid'))
+        model.add(Conv2D(144, (3, 3), padding='same', activation='sigmoid'))
         model.add(MaxPooling2D((5, 1)))
 
         # increasing complexity to find and better solution to the decision problem.
-        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid'))
+        model.add(Conv2D(128, (3, 3), padding='same', activation='sigmoid'))
         model.add(MaxPooling2D((2, 2)))
 
-        model.add(Conv2D(32, (3, 3), padding='same', activation='sigmoid'))
+        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid'))
         model.add(MaxPooling2D((3, 3)))
         # we would like to add an LSTM layer here for it to remember the logical structure for future decisions that are
         # important

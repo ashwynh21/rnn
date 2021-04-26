@@ -16,7 +16,7 @@ class Position(object):
 
     elapsed: int
 
-    def __init__(self, action: Action, state: State, balance: float, price: float, volume: float, nexter: State):
+    def __init__(self, action: Action, state: State, nexter: State, price: float, balance: float, volume: float, sl: float, tp: float):
         self.nexter = nexter
         self.action = action
         self.state = state
@@ -26,3 +26,11 @@ class Position(object):
 
         self.elapsed = 0
         self.bias = [action.action] * 2
+        self.sl = sl
+        self.tp = tp
+
+    def stoppedout(self, price: float) -> bool:
+        return (price < self.sl) if self.action.action == 0 else (price > self.sl)
+
+    def takeprofit(self, price: float) -> bool:
+        return (price > self.tp) if self.action.action == 0 else (price < self.tp)

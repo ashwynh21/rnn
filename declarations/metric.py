@@ -5,7 +5,11 @@ to gauge the performance.
 """
 from typing import List
 
+from matplotlib import animation
+
 from declarations.action import Action
+
+import matplotlib.pyplot as pt
 
 
 class Metric(object):
@@ -128,3 +132,16 @@ class Metric(object):
     """
     We are going to need a function that will keep track of the maximum profit an account has made before being lost.
     """
+    @staticmethod
+    def plotanimation(x: List[float], y: List[float]):
+        fig, ax = pt.subplots()
+        line, = ax.plot(x, y)
+
+        def animate(i):
+            line.set_ydata(y[x + i / 50])  # update the data.
+            return line,
+
+        animation.FuncAnimation(
+            fig, animate, interval=20, blit=True, save_count=50)
+
+        pt.show()

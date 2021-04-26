@@ -56,7 +56,7 @@ class Environment:
     We now need to define the functions that will perform market executions on the defined stepping environment
     structure that we have so let us begin by defining the function that will allow to place market orders...
     """
-    def buy(self, volume: float, balance: float) -> Position:
+    def buy(self, volume: float, balance: float, risk: float) -> Position:
         """
         we will separate the buy sell and hold functions fairly to make our code more understandable regardless of the
         redundancy. The function should return a sort of receipt for the agent so that they are able to record the
@@ -88,12 +88,14 @@ class Environment:
             action=Action([[[[1, 0, 0]]]]),
             volume=volume,
             balance=balance - (volume * price / 100),
-            price=price,
             state=state,
-            nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1]
+            nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1],
+            price=price,
+            sl=(price - risk),
+            tp=(price + (5 * risk)),
         )
 
-    def sell(self, volume: float, balance: float) -> Position:
+    def sell(self, volume: float, balance: float, risk: float) -> Position:
         cost = self.__pdata[self.__step].price()
         spread = self.__pdata[self.__step].spread()
 
@@ -109,11 +111,13 @@ class Environment:
         # we then need to return the data that the agent will need to update its own position in the environment.
         return Position(
             action=Action([[[[0, 1, 0]]]]),
+            state=state,
+            nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1],
             volume=volume,
             balance=balance - (volume * price / 100),
             price=price,
-            state=state,
-            nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1]
+            sl=(price + risk),
+            tp=(price - (5 * risk)),
         )
 
     def hold(self) -> Position:
@@ -126,9 +130,11 @@ class Environment:
             action=Action([[[[0, 0, 1]]]]),
             state=state,
             balance=0,
-            price=0,
             volume=0,
-            nexter=self.__pdata[self.__step]
+            nexter=self.__pdata[self.__step],
+            price=0,
+            sl=0,
+            tp=0,
         )
 
     def close(self, position: Position) -> Result:
@@ -144,13 +150,26 @@ class Environment:
         """
         profit = 0
 
-        if position.action.action == 0:
-            profit = self.__pdata[self.__step].price() - position.price
-        elif position.action.action == 1:
-            profit = position.price - self.__pdata[self.__step].price()
+        if position.stoppedout(self.step()[1].price()):
+            if position.action.action == 0:
+                profit = position.sl - position.price
+            elif position.action.action == 1:
+                profit = position.price - position.sl
+        elif position.takeprofit(self.step()[1].price()):
+            if position.action.action == 0:
+                profit = position.tp - position.price
+            elif position.action.action == 1:
+                profit = position.price - position.tp
+        else:
+            if position.action.action == 0:
+                profit = self.step()[1].price() - position.price
+            elif position.action.action == 1:
+                profit = position.price - self.step()[1].price()
+
+        # print(profit, position.price, position.sl, position.tp, position.elapsed)
 
         # in the result of closing the position we need to return the reward, and the state of the environment.
-        return Result(profit=profit, state=self.__pdata[self.__step])
+        return Result(profit=profit, state=self.step()[1])
 
     """
     Here we define a set of helper functions for the environment that will help convert the external data into something

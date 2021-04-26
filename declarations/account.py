@@ -77,17 +77,6 @@ class Account(object):
         data = {}
 
         for k, v in self.positions.items():
-            # first let us compute the profit of each position.
-            profit = 0
-            # we compute the stoploss price of the position.
-            stop = v.price + self.stoploss() * (1 if action == 1 else -1)
-            take = v.price + (5 * self.stoploss()) * (-1 if action == 1 else 1)
-
-            if v.action.action == 0:
-                profit = state.price() - v.price
-            elif v.action.action == 1:
-                profit = v.price - state.price()
-
             if action.action != 2:
                 v.bias.pop(0)
                 v.bias.append(action.action)
@@ -96,7 +85,9 @@ class Account(object):
             # so if the position is in the same direction as the action we hold otherwise we close.
             # this decision.
             # we add the condition that if the position bias is less than 0, then we close the position.
-            close = len(list(filter(lambda b: b != v.action.action, v.bias))) >= 2 and v.elapsed > 120
+
+            # len(list(filter(lambda b: b != v.action.action, v.bias))) >= 2 or
+            close = v.elapsed > 120 or v.stoppedout(state.price()) or v.takeprofit(state.price())
 
             if close:
                 data[k] = v
