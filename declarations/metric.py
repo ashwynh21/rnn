@@ -106,6 +106,7 @@ class Metric(object):
         self.profit.clear()
         self.actions.clear()
         self.loss.clear()
+        self.actions.clear()
 
     """
     We define a function that will count the number of random actions against the actual approximated actions.

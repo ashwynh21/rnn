@@ -56,7 +56,7 @@ class Environment:
     We now need to define the functions that will perform market executions on the defined stepping environment
     structure that we have so let us begin by defining the function that will allow to place market orders...
     """
-    def buy(self, volume: float, balance: float, risk: float) -> Position:
+    def buy(self, volume: float, balance: float) -> Position:
         """
         we will separate the buy sell and hold functions fairly to make our code more understandable regardless of the
         redundancy. The function should return a sort of receipt for the agent so that they are able to record the
@@ -91,11 +91,11 @@ class Environment:
             state=state,
             nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1],
             price=price,
-            sl=(price - risk),
-            tp=(price + (5 * risk)),
+            sl=(price - 10),
+            tp=(price + 50),
         )
 
-    def sell(self, volume: float, balance: float, risk: float) -> Position:
+    def sell(self, volume: float, balance: float) -> Position:
         cost = self.__pdata[self.__step].price()
         spread = self.__pdata[self.__step].spread()
 
@@ -116,8 +116,8 @@ class Environment:
             volume=volume,
             balance=balance - (volume * price / 100),
             price=price,
-            sl=(price + risk),
-            tp=(price - (5 * risk)),
+            sl=(price + 10),
+            tp=(price - 50),
         )
 
     def hold(self) -> Position:
@@ -165,9 +165,6 @@ class Environment:
                 profit = self.step()[1].price() - position.price
             elif position.action.action == 1:
                 profit = position.price - self.step()[1].price()
-
-        # print(profit, position.price, position.sl, position.tp, position.elapsed)
-
         # in the result of closing the position we need to return the reward, and the state of the environment.
         return Result(profit=profit, state=self.step()[1])
 

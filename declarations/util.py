@@ -9,4 +9,3 @@ the training function defined below only runs through one iteration of the envir
 
 the goal in this function is to get the agent to survive the environment for one iteration.
 """
-

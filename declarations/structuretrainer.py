@@ -17,7 +17,6 @@ class StructureTrainer:
         environment = Environment('assets/NAS100.csv')
         agent = Agent('nasdaq', 128)
         # run our training function
-        print(sum(metric.profit), metric.restarts)
         while sum(metric.profit) <= 0 and metric.restarts > 0:
             self.__train__(environment, agent, account, metric)
 
@@ -81,16 +80,18 @@ class StructureTrainer:
             action = agent.act(state)
 
             metric.countaction(action)
+
             # then we need to check if the account is able to open positions otherwise the account is blown
-            if account.isable(state.price(), 0.01):
+            volume = round(account.stoploss() / 10, 2)
+            if account.isable(state.price(), volume):
                 """
                 Once confirmed then we place our oder onto the environment.
                 """
                 if action.action == 0:
                     # then we get the position from the environment and add it to the account
-                    account.record(str(index), environment.buy(0.01, account.balance, account.stoploss()))
+                    account.record(str(index), environment.buy(volume, account.balance))
                 elif action.action == 1:
-                    account.record(str(index), environment.sell(0.01, account.balance, account.stoploss()))
+                    account.record(str(index), environment.sell(volume, account.balance))
                 elif action.action == 2:
                     # here we need to get the state result of the action
                     environment.__next__()
@@ -99,7 +100,7 @@ class StructureTrainer:
                     memory = Experience(
                         state=state,
                         action=action,
-                        reward=0.005,
+                        reward=-0.01,
                         next=environment.step()[1]
                     )
                     # then we add this experience to the agents memory.
@@ -113,7 +114,6 @@ class StructureTrainer:
                     r = environment.close(p)
                     # now we update the account by removing the positions and adding the result to the ledger
                     account.archive(k, r)
-                    print(r.profit, account.balance)
 
                     # now we need to remember the position in the memory so we construct an experience.
                     experience = Experience(p.state, p.action, r.reward(), p.nexter)
@@ -125,6 +125,19 @@ class StructureTrainer:
                     # get the loss and add it to the metrics we are going to observe
                     metric.addloss(agent.experience())
 
+            elif len(account.positions.items()) > 0:
+                environment.__next__()
+
+                for k, p in account.closable(state, action).items():
+                    r = environment.close(p)
+                    # now we update the account by removing the positions and adding the result to the ledger
+                    account.archive(k, r)
+
+                    # now we need to remember the position in the memory so we construct an experience.
+                    experience = Experience(p.state, p.action, r.reward(), p.nexter)
+                    metric.addprofit(r.profit)
+                    agent.memory.remember(experience)
+
             else:
                 """
                 If the account runs out of money we end the session and the agent must start afresh.
@@ -135,8 +148,10 @@ class StructureTrainer:
                 # update our metrics
                 metric.restart()
                 metric.survival(index)
-                print(f'[SURVIVED] : {metric.longevity[-1]}')
-                # metric.reset()
+
+                ax = metric.actionsummary()
+                print(f'[SURVIVED] : {metric.longevity[-1]}, [ACTIONS] : {ax["buy"]} buys, {ax["sell"]} sells, {ax["hold"]} holds')
+                metric.reset()
 
                 account.reset(100)
                 # environment.reset()
@@ -172,11 +187,12 @@ class StructureTrainer:
                 Once confirmed then we place our oder onto the environment.
                 """
                 print('action - ', action.action)
+                volume = account.stoploss() / 5
                 if action.action == 0:
                     # then we get the position from the environment and add it to the account
-                    account.record(str(index), environment.buy(0.01, account.balance, account.stoploss()))
+                    account.record(str(index), environment.buy(volume, account.balance))
                 elif action.action == 1:
-                    account.record(str(index), environment.sell(0.01, account.balance, account.stoploss()))
+                    account.record(str(index), environment.sell(volume, account.balance))
                 elif action.action == 2:
                     # here we need to get the state result of the action
                     environment.__next__()
