@@ -51,15 +51,6 @@ class Account(object):
         self.ledger[k] = v
 
     """
-    Let us define a function that will allow us to check if the available balance is going to be enough to open a
-    said position before submitting the request to the environment. If the balance is not enough then we raise an
-    exception that will cause the session or episode to restart.
-    """
-
-    def isable(self, price: float, volume: float) -> bool:
-        return self.balance > (volume * price / 100)
-
-    """
     Now we define a function that will get the closable positions as a dictionary
     
     We are going to redesign our closing function to better incorporate other factors of the position, the price of the
@@ -104,3 +95,21 @@ class Account(object):
 
     def stoploss(self) -> float:
         return self.balance * self.risk
+
+    """
+    We define a function that calculates the volume of the position that we are going to create by using the account
+    risk parameter.
+    """
+    def getvolume(self, price: float, stop: float, pair: str):
+        # if the pair is a JPY major or minor then our multiplier will be:
+        multiplier = 0
+        if 'JPY' not in pair:
+            multiplier = 0.0001
+        else:
+            multiplier = 0.01
+
+        risk = self.stoploss()
+        loss = abs((price - stop) / multiplier)
+        pip = risk / loss
+
+        return pip / multiplier

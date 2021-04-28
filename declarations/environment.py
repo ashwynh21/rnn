@@ -15,17 +15,18 @@ from declarations.position import Position
 from declarations.result import Result
 from declarations.state import State
 
-from scipy.interpolate import interp1d
-
 scalar = MinMaxScaler()
 
 
 class Environment:
+    pair: str
     """
     To accommodate the cases of
     """
-    def __init__(self, training: str):
+    def __init__(self, training: str, pair: str):
         # we define the initial time step state to zero
+        self.pair = pair
+
         self.__step = 0
         """
         So here we will define the input data set, from the a file path to the CSV learning and testing data.
@@ -83,6 +84,7 @@ class Environment:
         # then we update the time step...
         self.__next__()
 
+        # print(f'[BUY]: {balance}, {volume}, {(volume * price / 100)}')
         # we then need to return the data that the agent will need to update its own position in the environment.
         return Position(
             action=Action([[[[1, 0, 0]]]]),
@@ -91,8 +93,8 @@ class Environment:
             state=state,
             nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1],
             price=price,
-            sl=(price - 10),
-            tp=(price + 50),
+            sl=(price - 70),
+            tp=(price + 350),
         )
 
     def sell(self, volume: float, balance: float) -> Position:
@@ -109,6 +111,8 @@ class Environment:
         self.__next__()
 
         # we then need to return the data that the agent will need to update its own position in the environment.
+        # print(f'[SELL]: {balance}, {volume}, {(volume * price / 100)}')
+
         return Position(
             action=Action([[[[0, 1, 0]]]]),
             state=state,
@@ -116,8 +120,8 @@ class Environment:
             volume=volume,
             balance=balance - (volume * price / 100),
             price=price,
-            sl=(price + 10),
-            tp=(price - 50),
+            sl=(price + 70),
+            tp=(price - 350),
         )
 
     def hold(self) -> Position:
@@ -126,6 +130,7 @@ class Environment:
         # then we update the time step...
         self.__next__()
 
+        # print(f'[HOLD]')
         return Position(
             action=Action([[[[0, 0, 1]]]]),
             state=state,
@@ -165,6 +170,9 @@ class Environment:
                 profit = self.step()[1].price() - position.price
             elif position.action.action == 1:
                 profit = position.price - self.step()[1].price()
+
+        # now we get the final result from the profit and how many units that were invested
+        profit = self.getprofit(profit, position.volume)
         # in the result of closing the position we need to return the reward, and the state of the environment.
         return Result(profit=profit, state=self.step()[1])
 
@@ -220,3 +228,17 @@ class Environment:
     """
     def done(self) -> bool:
         return self.__step == len(self.__pdata) - 1
+
+    """
+    We define a function that will compute the profit of a given position.
+    """
+    def getprofit(self, profit: float, volume: float):
+        multiplier = 0
+        if 'JPY' not in self.pair:
+            multiplier = 0.0001
+        else:
+            multiplier = 0.01
+
+        pips = profit / multiplier
+
+        return pips * volume * multiplier

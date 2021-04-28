@@ -14,7 +14,7 @@ class StructureTrainer:
         account = Account(100)
         metric = Metric()
 
-        environment = Environment('assets/NAS100.csv')
+        environment = Environment('assets/NAS100.csv', 'USTECm')
         agent = Agent('nasdaq', 128)
         # run our training function
         while sum(metric.profit) <= 0 and metric.restarts > 0:
@@ -82,8 +82,8 @@ class StructureTrainer:
             metric.countaction(action)
 
             # then we need to check if the account is able to open positions otherwise the account is blown
-            volume = round(account.stoploss() / 10, 2)
-            if account.isable(state.price(), volume):
+            volume = round(account.getvolume(state.price(), state.price() - 70, environment.pair), 2)
+            if volume > 0:
                 """
                 Once confirmed then we place our oder onto the environment.
                 """
@@ -96,6 +96,7 @@ class StructureTrainer:
                     # here we need to get the state result of the action
                     environment.__next__()
 
+                    # print(f'[HOLD]')
                     # for holding we will give the agent a reward
                     memory = Experience(
                         state=state,
@@ -114,6 +115,7 @@ class StructureTrainer:
                     r = environment.close(p)
                     # now we update the account by removing the positions and adding the result to the ledger
                     account.archive(k, r)
+                    # print('[CLOSE]: ', r.profit, account.balance)
 
                     # now we need to remember the position in the memory so we construct an experience.
                     experience = Experience(p.state, p.action, r.reward(), p.nexter)
@@ -123,7 +125,9 @@ class StructureTrainer:
                 # so if the memory is full we should start training the model
                 if agent.memory.isready() and index % 128 == 0:
                     # get the loss and add it to the metrics we are going to observe
-                    metric.addloss(agent.experience())
+                    loss = agent.experience()
+                    print(loss)
+                    metric.addloss(loss)
 
             elif len(account.positions.items()) > 0:
                 environment.__next__()
@@ -132,6 +136,7 @@ class StructureTrainer:
                     r = environment.close(p)
                     # now we update the account by removing the positions and adding the result to the ledger
                     account.archive(k, r)
+                    # print('[CLOSE]: ', r.profit, account.balance)
 
                     # now we need to remember the position in the memory so we construct an experience.
                     experience = Experience(p.state, p.action, r.reward(), p.nexter)
@@ -149,17 +154,14 @@ class StructureTrainer:
                 metric.restart()
                 metric.survival(index)
 
-                ax = metric.actionsummary()
-                print(f'[SURVIVED] : {metric.longevity[-1]}, [ACTIONS] : {ax["buy"]} buys, {ax["sell"]} sells, {ax["hold"]} holds')
-                metric.reset()
-
+                # ax = metric.actionsummary()
+                # print(f'[SURVIVED] : {metric.longevity[-1]}, [ACTIONS] : {ax["buy"]} buys, {ax["sell"]} sells, {ax["hold"]} holds')
+                # metric.reset()
                 account.reset(100)
                 # environment.reset()
 
                 metric.survival(index)
                 # we wont reset this time...
-
-                environment.reset()
 
         metric.restarts -= 1
 
