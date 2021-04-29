@@ -84,7 +84,7 @@ class Environment:
         # then we update the time step...
         self.__next__()
 
-        # print(f'[BUY]: {balance}, {volume}, {(volume * price / 100)}')
+        print(f'[BUY]: {balance}, {volume}, {(volume * price / 100)}')
         # we then need to return the data that the agent will need to update its own position in the environment.
         return Position(
             action=Action([[[[1, 0, 0]]]]),
@@ -111,7 +111,7 @@ class Environment:
         self.__next__()
 
         # we then need to return the data that the agent will need to update its own position in the environment.
-        # print(f'[SELL]: {balance}, {volume}, {(volume * price / 100)}')
+        print(f'[SELL]: {balance}, {volume}, {(volume * price / 100)}')
 
         return Position(
             action=Action([[[[0, 1, 0]]]]),
@@ -130,7 +130,7 @@ class Environment:
         # then we update the time step...
         self.__next__()
 
-        # print(f'[HOLD]')
+        print(f'[HOLD]')
         return Position(
             action=Action([[[[0, 0, 1]]]]),
             state=state,

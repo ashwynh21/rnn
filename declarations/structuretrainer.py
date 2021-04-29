@@ -15,7 +15,7 @@ class StructureTrainer:
         metric = Metric()
 
         environment = Environment('assets/NAS100.csv', 'USTECm')
-        agent = Agent('nasdaq', 128)
+        agent = Agent('nasdaq', 512)
         # run our training function
         while sum(metric.profit) <= 0 and metric.restarts > 0:
             self.__train__(environment, agent, account, metric)
@@ -96,7 +96,7 @@ class StructureTrainer:
                     # here we need to get the state result of the action
                     environment.__next__()
 
-                    # print(f'[HOLD]')
+                    print(f'[HOLD]')
                     # for holding we will give the agent a reward
                     memory = Experience(
                         state=state,
@@ -113,9 +113,10 @@ class StructureTrainer:
                 """
                 for k, p in account.closable(state, action).items():
                     r = environment.close(p)
+                    account.balance += (volume * p.price / 100)
                     # now we update the account by removing the positions and adding the result to the ledger
                     account.archive(k, r)
-                    # print('[CLOSE]: ', r.profit, account.balance)
+                    print('[CLOSE]: ', r.profit, account.balance)
 
                     # now we need to remember the position in the memory so we construct an experience.
                     experience = Experience(p.state, p.action, r.reward(), p.nexter)
@@ -134,9 +135,10 @@ class StructureTrainer:
 
                 for k, p in account.closable(state, action).items():
                     r = environment.close(p)
+                    account.balance += (volume * p.price / 100)
                     # now we update the account by removing the positions and adding the result to the ledger
                     account.archive(k, r)
-                    # print('[CLOSE]: ', r.profit, account.balance)
+                    print('[CLOSE]: ', r.profit, account.balance)
 
                     # now we need to remember the position in the memory so we construct an experience.
                     experience = Experience(p.state, p.action, r.reward(), p.nexter)

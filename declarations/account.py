@@ -92,7 +92,6 @@ class Account(object):
     """
     We are going to need a function to calculate the risk that the account can manage before opening a position.
     """
-
     def stoploss(self) -> float:
         return self.balance * self.risk
 
