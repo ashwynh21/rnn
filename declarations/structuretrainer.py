@@ -19,7 +19,6 @@ class StructureTrainer:
         # run our training function
         while sum(metric.profit) <= 0 and metric.restarts > 0:
             self.__train__(environment, agent, account, metric)
-
             ax = metric.actionsummary()
 
             print(f'+----------------------------------------------------------+')
@@ -34,17 +33,17 @@ class StructureTrainer:
             print(f'+----------------------------------------------------------+\n')
 
             # then we plot the loss that we are getting from the agent training.
-            pt.plot(range(len(metric.longevity)), metric.longevity)
-            pt.show()
-
             environment.reset()
             metric.reset()
+
+            metric.restarts -= 1
+            account.reset(100)
 
     def evaluate(self):
         account = Account(100)
         metric = Metric()
 
-        environment = Environment('assets/NAS100_2021.csv')
+        environment = Environment('assets/NAS100_2021.csv', 'USTECm')
         agent = Agent('nasdaq', 128, evaluate=True)
 
         for i in range(4):
@@ -82,7 +81,7 @@ class StructureTrainer:
             metric.countaction(action)
 
             # then we need to check if the account is able to open positions otherwise the account is blown
-            volume = round(account.getvolume(state.price(), state.price() - 70, environment.pair), 2)
+            volume = round(account.getvolume(state.price(), state.price() - environment.pipstoprofit(50), environment.pair), 2)
             if volume > 0:
                 """
                 Once confirmed then we place our oder onto the environment.
@@ -101,7 +100,7 @@ class StructureTrainer:
                     memory = Experience(
                         state=state,
                         action=action,
-                        reward=-0.01,
+                        reward=-0.5,
                         next=environment.step()[1]
                     )
                     # then we add this experience to the agents memory.
@@ -113,10 +112,12 @@ class StructureTrainer:
                 """
                 for k, p in account.closable(state, action).items():
                     r = environment.close(p)
-                    account.balance += (volume * p.price / 100)
+                    # dont forget to add back the margin
+                    account.balance += (p.volume * p.price / 100)
                     # now we update the account by removing the positions and adding the result to the ledger
                     account.archive(k, r)
-                    print('[CLOSE]: ', r.profit, account.balance)
+                    action = ['BUY', 'SELL'][p.action.action]
+                    print('[CLOSE]: ', action, r.profit, account.balance, p.volume)
 
                     # now we need to remember the position in the memory so we construct an experience.
                     experience = Experience(p.state, p.action, r.reward(), p.nexter)
@@ -135,10 +136,12 @@ class StructureTrainer:
 
                 for k, p in account.closable(state, action).items():
                     r = environment.close(p)
-                    account.balance += (volume * p.price / 100)
+                    # dont forget to add back the margin
+                    account.balance += (p.volume * p.price / 100)
                     # now we update the account by removing the positions and adding the result to the ledger
                     account.archive(k, r)
-                    print('[CLOSE]: ', r.profit, account.balance)
+                    action = ['BUY', 'SELL'][p.action.action]
+                    print('[CLOSE]: ', action, r.profit, account.balance, p.volume)
 
                     # now we need to remember the position in the memory so we construct an experience.
                     experience = Experience(p.state, p.action, r.reward(), p.nexter)
@@ -156,16 +159,14 @@ class StructureTrainer:
                 metric.restart()
                 metric.survival(index)
 
-                # ax = metric.actionsummary()
-                # print(f'[SURVIVED] : {metric.longevity[-1]}, [ACTIONS] : {ax["buy"]} buys, {ax["sell"]} sells, {ax["hold"]} holds')
-                # metric.reset()
+                ax = metric.actionsummary()
+                print(f'[SURVIVED] : {metric.longevity[-1]}, [ACTIONS] : {ax["buy"]} buys, {ax["sell"]} sells, {ax["hold"]} holds')
+
                 account.reset(100)
                 # environment.reset()
 
                 metric.survival(index)
                 # we wont reset this time...
-
-        metric.restarts -= 1
 
     """
     the function below is designed to evaluate the survival ability learned from the training session using a different

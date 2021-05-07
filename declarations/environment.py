@@ -84,7 +84,7 @@ class Environment:
         # then we update the time step...
         self.__next__()
 
-        print(f'[BUY]: {balance}, {volume}, {(volume * price / 100)}')
+        print(f'[BUY]: {balance}, {volume}, {-self.getprofit(self.pipstoprofit(50), volume)}', price, (volume * price / 100))
         # we then need to return the data that the agent will need to update its own position in the environment.
         return Position(
             action=Action([[[[1, 0, 0]]]]),
@@ -93,8 +93,8 @@ class Environment:
             state=state,
             nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1],
             price=price,
-            sl=(price - 70),
-            tp=(price + 350),
+            sl=(price - self.pipstoprofit(50)),
+            tp=(price + self.pipstoprofit(250)),
         )
 
     def sell(self, volume: float, balance: float) -> Position:
@@ -111,7 +111,7 @@ class Environment:
         self.__next__()
 
         # we then need to return the data that the agent will need to update its own position in the environment.
-        print(f'[SELL]: {balance}, {volume}, {(volume * price / 100)}')
+        print(f'[SELL]: {balance}, {volume}, {-self.getprofit(self.pipstoprofit(50), volume)}', price, (volume * price / 100))
 
         return Position(
             action=Action([[[[0, 1, 0]]]]),
@@ -120,8 +120,8 @@ class Environment:
             volume=volume,
             balance=balance - (volume * price / 100),
             price=price,
-            sl=(price + 70),
-            tp=(price - 350),
+            sl=(price + self.pipstoprofit(50)),
+            tp=(price - self.pipstoprofit(250)),
         )
 
     def hold(self) -> Position:
@@ -188,17 +188,13 @@ class Environment:
 
     @staticmethod
     def dater(date: datetime):
-        # we need to offset the hours because of a timezone bug
-        date = date + timedelta(hours=1)
-
         # we determine the closing time of the market
-        close = date + timedelta(days=(3 - date.weekday()))
+        close = date + timedelta(days=(4 - date.weekday()))
         close = close.replace(hour=19, minute=0, second=0)
 
         # we determine the normal of the week
-        normal = date - timedelta(days=date.weekday())
-        normal = normal.replace(hour=0, minute=0, second=0)
-
+        normal = date - timedelta(days=date.weekday() + 1)
+        normal = normal.replace(hour=22, minute=0, second=0)
         fit = np.array([normal.timestamp(), date.timestamp(), close.timestamp()]).reshape(-1, 1)
 
         # then we return the difference in seconds
@@ -229,11 +225,19 @@ class Environment:
     def done(self) -> bool:
         return self.__step == len(self.__pdata) - 1
 
+    def pipstoprofit(self, pips: float):
+        pips = pips * 10000
+        if 'JPY' not in self.pair:
+            multiplier = 0.0001
+        else:
+            multiplier = 0.01
+
+        return pips * multiplier
+
     """
     We define a function that will compute the profit of a given position.
     """
     def getprofit(self, profit: float, volume: float):
-        multiplier = 0
         if 'JPY' not in self.pair:
             multiplier = 0.0001
         else:

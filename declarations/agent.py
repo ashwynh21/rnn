@@ -80,7 +80,6 @@ class Agent(object):
     """
     with the model functionality done we now need to work on how this model is going to learn from a said data set X
     """
-
     def __model__(self):
         """
         We define a function that will return our model, this is a hidden function that should only be used in the
@@ -120,7 +119,6 @@ class Agent(object):
     """
     We define a function that will update the target model weights
     """
-
     def __update__(self):
         self.target.set_weights(self.policy.get_weights())
 
