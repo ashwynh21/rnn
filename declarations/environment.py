@@ -203,20 +203,21 @@ class Environment:
     @staticmethod
     def parse(data: pd.DataFrame) -> List[State]:
         # we remove the columns we do not need
-        del data['tick_volume']
-        del data['real_volume']
+        d = data.copy()
+        del d['tick_volume']
+        del d['real_volume']
 
         # here we convert the string date to numbers of type float32
-        data['time'] = pd.to_datetime(data['time'])
+        d['time'] = pd.to_datetime(d['time'])
         # time relative to weeks
-        data['time'] = data['time'].map(Environment.dater)
+        d['time'] = d['time'].map(Environment.dater)
 
         # we then need to split the data into sets of 12
-        data = data.to_numpy()
-        data = list(Environment.track(data))
+        d = d.to_numpy()
+        d = list(Environment.track(d))
 
         # then we convert the list of lists to a list of state objects
-        return list(map(lambda s: State(s), data))
+        return list(map(lambda s: State(s), d))
 
     """
     we need to define a function that checks if the episode or state data is completed its iteration so that we are
@@ -246,3 +247,12 @@ class Environment:
         pips = profit / multiplier
 
         return pips * volume * multiplier
+
+    """
+    We define a function that will allow us to get the last 2880 candles data points, if there are any.
+    """
+    def getmassstate(self):
+        if len(self.__data.index) < 960:
+            return self.__data.copy()
+
+        return self.__data.copy()[-960:]

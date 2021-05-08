@@ -6,6 +6,10 @@ into building coordinated agents.
 from declarations import Environment, Agent, Account, Metric, Experience
 
 import matplotlib.pyplot as pt
+import pandas as pd
+import matplotlib.dates as dts
+
+from declarations.level import Level
 
 
 class StructureTrainer:
@@ -226,3 +230,20 @@ class StructureTrainer:
         """
         metric.addprofit(account.balance - 100)
         print(f'Test Complete - {account.balance}')
+
+    """
+    A function that will work with our KMeans functions to get the supports
+    """
+    @staticmethod
+    def supports():
+        environment = Environment('assets/NAS100.csv', 'USTECm')
+
+        data = environment.getmassstate()
+        # we now use this data to pass to our nearest neighbors functions
+        data['time'] = pd.to_datetime(data['time'])
+        data['time'] = pd.to_datetime(data['time'], unit='s')
+        data['time'] = data['time'].apply(dts.date2num)
+
+        level = Level('USTECm')
+        supports = level.highlow(data)
+        level.plot(data, supports[0], supports[1])
