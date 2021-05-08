@@ -46,7 +46,10 @@ class State(object):
     def plot(self, name: str):
         y = self.normalize()[0]
         x = [x[5] for x in y]
+
         plt.plot(x, [x[0] for x in y], label=f'{name} - open')
         plt.plot(x, [x[1] for x in y], label=f'{name} - high')
         plt.plot(x, [x[2] for x in y], label=f'{name} - low')
         plt.plot(x, [x[3] for x in y], label=f'{name} - close')
+        plt.legend()
+        plt.show()

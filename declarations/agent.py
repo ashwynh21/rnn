@@ -150,14 +150,6 @@ class Agent(object):
         x, y = [], []
         for state, action, reward, nexter in buffer:
             # estimate q-values based on current state
-            # plt.title(f'Action: {action.action} - ${round(reward, 2)}', loc='left')
-            # plt.subplot(1, 2, 1)
-            # state.plot('state')
-            # plt.subplot(1, 2, 2)
-            # nexter.plot('next')
-            # plt.legend()
-            # plt.show()
-
             target = Action(self.policy.predict(state.normalize()))
             bullseye = Action(self.target.predict(nexter.normalize()))
 
