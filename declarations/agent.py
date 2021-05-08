@@ -8,6 +8,7 @@ from keras.losses import Huber
 from tensorflow.python.keras.models import load_model
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 from declarations.action import Action
 from declarations.memory import Memory
@@ -89,10 +90,10 @@ class Agent(object):
         # we also need to define our model.
         model = Sequential()
 
-        model.add(Conv2D(128, (3, 3), padding='same', activation='sigmoid', input_shape=(120, 6, 1)))
+        model.add(Conv2D(64, (3, 3), padding='same', activation='sigmoid', input_shape=(120, 6, 1)))
         model.add(MaxPooling2D((2, 1)))
 
-        model.add(Conv2D(144, (3, 3), padding='same', activation='sigmoid'))
+        model.add(Conv2D(128, (3, 3), padding='same', activation='sigmoid'))
         model.add(MaxPooling2D((2, 1)))
 
         model.add(Conv2D(144, (3, 3), padding='same', activation='sigmoid'))
@@ -149,6 +150,13 @@ class Agent(object):
         x, y = [], []
         for state, action, reward, nexter in buffer:
             # estimate q-values based on current state
+            # plt.title(f'Action: {action.action} - ${round(reward, 2)}', loc='left')
+            # plt.subplot(1, 2, 1)
+            # state.plot('state')
+            # plt.subplot(1, 2, 2)
+            # nexter.plot('next')
+            # plt.legend()
+            # plt.show()
 
             target = Action(self.policy.predict(state.normalize()))
             bullseye = Action(self.target.predict(nexter.normalize()))

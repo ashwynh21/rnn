@@ -3,9 +3,11 @@ We define this class to manage a single state for the application, we will use t
 so that we do not need to worry about working with the primitive types
 """
 from typing import List
+from sklearn.preprocessing import MinMaxScaler
 
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
+import matplotlib.pyplot as plt
+
 
 scalar = MinMaxScaler()
 
@@ -39,3 +41,12 @@ class State(object):
             candle.append(time[i])
 
         return np.array([np.array(scaled).reshape(120, 6, 1)])
+
+    # we define a simple function that will plot the OHLC gotten from the above functions
+    def plot(self, name: str):
+        y = self.normalize()[0]
+        x = [x[5] for x in y]
+        plt.plot(x, [x[0] for x in y], label=f'{name} - open')
+        plt.plot(x, [x[1] for x in y], label=f'{name} - high')
+        plt.plot(x, [x[2] for x in y], label=f'{name} - low')
+        plt.plot(x, [x[3] for x in y], label=f'{name} - close')

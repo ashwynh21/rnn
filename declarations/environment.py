@@ -91,7 +91,7 @@ class Environment:
             volume=volume,
             balance=balance - (volume * price / 100),
             state=state,
-            nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1],
+            nexter=self.__pdata[self.__step + 120 if self.__step < len(self.__pdata) - 120 else -1],
             price=price,
             sl=(price - self.pipstoprofit(50)),
             tp=(price + self.pipstoprofit(250)),
@@ -116,7 +116,7 @@ class Environment:
         return Position(
             action=Action([[[[0, 1, 0]]]]),
             state=state,
-            nexter=self.__pdata[self.__step + 1 if self.__step < len(self.__pdata) - 1 else -1],
+            nexter=self.__pdata[self.__step + 120 if self.__step < len(self.__pdata) - 120 else -1],
             volume=volume,
             balance=balance - (volume * price / 100),
             price=price,
