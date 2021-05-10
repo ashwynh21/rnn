@@ -8,8 +8,10 @@ from declarations import Environment, Agent, Account, Metric, Experience
 import matplotlib.pyplot as pt
 import pandas as pd
 import matplotlib.dates as dts
+import numpy as np
 
 from declarations.level import Level
+from declarations.price import Price
 
 
 class StructureTrainer:
@@ -247,3 +249,12 @@ class StructureTrainer:
         level = Level('USTECm')
         supports = level.highlow(data)
         level.plot(data, supports[0], supports[1])
+
+    @staticmethod
+    def prices():
+        environment = Environment('assets/NAS100.csv', 'USTECm')
+        price = Price('price')
+
+        data = np.array(environment.data()['close'].values).reshape(-1, 1)
+        price.load()
+        price.test(data)

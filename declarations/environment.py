@@ -256,3 +256,6 @@ class Environment:
             return self.__data.copy()
 
         return self.__data.copy()[-960:]
+
+    def data(self):
+        return self.__data
