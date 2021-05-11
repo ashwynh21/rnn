@@ -257,4 +257,6 @@ class StructureTrainer:
 
         data = np.array(environment.data()['close'].values).reshape(-1, 1)
         price.load()
-        price.test(data)
+
+        predictions = price.test(data)
+        price.plot(data.flatten(), predictions)

@@ -16,6 +16,7 @@ from tensorflow.python.keras.losses import MeanSquaredError
 from keras.optimizers import Adam
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 scalar = MinMaxScaler()
 
@@ -81,5 +82,12 @@ class Price(object):
         predictions = self.model.predict(x)
         predictions = scalar.inverse_transform(predictions)
 
-        print(predictions)
+        return np.array(predictions).flatten()
+
+    @staticmethod
+    def plot(data: List[float], predictions: List[float]):
+        plt.plot(range(len(predictions)), data[-len(predictions):], label='Original')
+        plt.plot(range(len(predictions)), predictions, label='Prediction')
+        plt.legend()
+        plt.show()
 
