@@ -20,6 +20,8 @@ class StructureTrainer:
 
         environment = Environment('assets/NAS100.csv', 'USTECm')
         agent = Agent('nasdaq', 512)
+        level = Level('nasdaq')
+
         # run our training function
         while sum(metric.profit) <= 0 and metric.restarts > 0:
             self.__train__(environment, agent, account, metric)
