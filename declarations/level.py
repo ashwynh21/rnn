@@ -85,4 +85,7 @@ class Level(object):
         high_centers = high_clusters.cluster_centers_
         high_centers = np.sort(high_centers, axis=0)
 
-        return high_centers, low_centers
+        """
+        So we want to pair up the highs with their nearest lows
+        """
+        return [[h.tolist()[0], low_centers[(np.abs(low_centers - h)).argmin()].tolist()[0]] for h in high_centers]

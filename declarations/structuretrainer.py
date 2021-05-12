@@ -246,4 +246,4 @@ class StructureTrainer:
 
         level = Level('USTECm')
         supports = level.highlow(data)
-        level.plot(data, supports[0], supports[1])
+        print(supports)
